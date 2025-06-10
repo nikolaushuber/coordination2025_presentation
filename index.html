@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>reveal.js</title>
+
+		<link rel="stylesheet" href="revealjs/dist/reset.css">
+		<link rel="stylesheet" href="revealjs/dist/reveal.css">
+		<link rel="stylesheet" href="revealjs/dist/theme/black.css">
+
+		<!-- Theme used for syntax highlighted code -->
+		<link rel="stylesheet" href="revealjs/plugin/highlight/monokai.css">
+		<style>
+			.reveal .slide-number {
+				font-size: 0.5em;
+				color: #ffffff; 
+			}
+		</style>
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+
+<section>
+	<div style="display:flex; flex-direction: row; justify-content: right; align-items: center;">
+		<img width="10%" src="images/badges/available.png" />
+		<img src="images/badges/reusable.png" width="10%"/>
+	</div>
+	<p><strong>Mimosa: A Language for Asynchronous Implementation of Embedded Systems Software</strong></p>
+	<p><small><span style="color: orange;">Nikolaus Huber <sup style="vertical-align: super;">(1)</sup></span>, Susanne Graf <sup style="vertical-align: super;">(1, 2)</sup>, Philipp Rümmer <sup style="vertical-align: super;">(1, 3)</sup>, Wang Yi <sup style="vertical-align: super;">(1)</sup></p></small>
+	<p><small><sup style="vertical-align: super;">(1)</sup> Uppsala University, Uppsala, Sweden<br><sup style="vertical-align: super;">(2)</sup> Université Grenoble Alpes, CNRS, Grenoble INP, VERIMAG, France<br><sup style="vertical-align: super;">(3)</sup> University of Regensburg, Regensburg, Germany</p></small>
+	<!-- <div style="display:flex; flex-direction: row; justify-content: center; align-items: center; gap: 10%">
+		<img width="10%" src="/inc/uu_vit.png" />
+		<div width="10%"></div>
+		<img src="/inc/tarides_logo.png" width="20%"/>
+	</div> -->
+</section>
+
+<section  data-auto-animate>
+	<img width="90%" src="images/fib.png" />
+</section>
+
+<section data-auto-animate>
+	<img width="80%" src="images/fib.png" />
+	<pre class="text"><code data-trim data-noescape data-line-numbers="|1|2,3|5-8|10-12|">
+		step print_int (_ : int) --> ()
+		step add (x, y) --> z { z = x + y }
+		step split x --> (o1, o2, o3) { o1, o2, o3 = x, x, x }
+
+		channel a : int = { 1 }
+		channel b : int = { 0 }
+		channel c : int
+		channel d : int
+
+		node add implements add (a, c) --> (b) every 10ms
+		node split implements split (b) --> (a, d, c) every 10ms
+		node print implements print_int (d) --> () every 10ms
+	</code></pre>
+</section>
+
+<section data-auto-animate>
+	<img width="80%" src="images/edge_detector.png" />
+</section>
+
+<section data-auto-animate>
+	<img width="60%" src="images/edge_detector.png" />
+	<pre class="text"><code data-trim data-noescape data-line-numbers="|1|3|4-6|12|">
+		step edge_detect (in : bool) --> (out : bool?)
+		{
+			pre_in = in -> pre in;
+			out = if !pre_in && in then (Some true)
+				    else if pre_in && !in then (Some false)
+				  	else None;
+		}
+
+		channel a : bool
+		channel b : bool
+
+		node edge implements edge_detect (a) --> (b?) every 100ms
+	</code></pre>
+</section>
+
+<section>
+	<span style="font-size: 70%">
+	$$\small
+	\begin{align*}
+	\begin{array}{rcll}
+	e : \text{Expression} & ::= & x & \text{Variable} \\
+	{} & | & c & \text{Constant} \\
+	{} & | & e\bm{,}\, \ldots\bm{,}\, e & \text{Tuple} \\
+	{} & | & \textbf{pre}\, e & \text{Pre} \\
+	{} & | & e\, \bm{\rightarrow}\, e & \text{Initialized-by} \\
+	{} & | & e\, \textbf{fby}\, e & \text{Followed-by} \\
+	{} & | & e\, e & \text{Application} \\
+	{} & | & \textbf{if}\, e\, \textbf{then}\, e\, \textbf{else}\, e & \text{Conditional} \\
+	{} & | & \textbf{None} & \text{None} \\
+	{} & | & \textbf{Some}\, e & \text{Some} \\
+	{} & | & \textbf{either}\, e\, \textbf{or}\, e & \text{Option match} \\
+	p : \text{Pattern} & ::= & x & \text{Variable pattern} \\
+	{} & | & p\bm{,}\, \ldots\bm{,}\, p & \text{Tuple pattern}
+	\end{array}
+	\end{align*}$$
+	</span>
+</section>
+
+<section>
+	<h3>Environments</h3>
+	<span style="font-size: 80%">
+	$$\Gamma \quad \subseteq \quad \textbf{Names} \times \textbf{Values}$$
+	</span>
+
+	<h5 class="fragment fade-up" style="text-align: left;">Projection</h5>
+	<span class="fragment fade-up" style="font-size: 70%">
+	\[\begin{align*}(x \mapsto 1, y \mapsto 2) \Downarrow_x\; &=\; 1 \\
+	(x \mapsto 1, y \mapsto 2) \Downarrow_{(x, y)}\; &=\; (1, 2)\end{align*}\]
+	</span>
+	<h5 class="fragment fade-up" style="text-align: left;">Update</h5>
+	<span class="fragment fade-up" style="font-size: 70%">
+	\[\begin{align*}(x \mapsto 1, y \mapsto 2) \Uparrow_z^3\; &=\; (x \mapsto 1, y \mapsto 2, z \mapsto 3) \\
+	(x \mapsto 1, y \mapsto 2) \Uparrow_{(x, y)}^{(3, 4)}\; &=\; (x \mapsto 3, y \mapsto 4)\end{align*}\]
+	</span>
+</section>
+
+			</div>
+		</div>
+
+		<script src="revealjs/dist/reveal.js"></script>
+		<script src="revealjs/plugin/notes/notes.js"></script>
+		<script src="revealjs/plugin/markdown/markdown.js"></script>
+		<script src="revealjs/plugin/highlight/highlight.js"></script>
+		<script src="revealjs/plugin/math/math.js"></script>
+		<script>
+			// More info about initialization & config:
+			// - https://revealjs.com/initialization/
+			// - https://revealjs.com/config/
+			Reveal.initialize({
+				hash: true,
+				slideNumber: "c",
+				transition: "fade",
+				controls: false,
+				// Learn about plugins: https://revealjs.com/plugins/
+				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes, RevealMath.KaTeX ]
+			});
+		</script>
+	</body>
+</html>
