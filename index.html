@@ -4,7 +4,7 @@
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-		<title>reveal.js</title>
+		<title>Mimosa</title>
 
 		<link rel="stylesheet" href="revealjs/dist/reset.css">
 		<link rel="stylesheet" href="revealjs/dist/reveal.css">
@@ -38,8 +38,46 @@
 	</div> -->
 </section>
 
-<section  data-auto-animate>
-	<img width="90%" src="images/fib.png" />
+<section>
+	<h3>Motivation</h3>
+	<ul>
+		<li class="fragment fade-up">Synchronous paradigm</li>
+		<ul>
+			<li class="fragment fade-up">Lustre/SCADE, Esterel, Signal, ...</li>
+			<li class="fragment fade-up">safety-critical embedded control</li>
+		</ul>
+		<li class="fragment fade-up">Modern execution platforms</li>
+		<ul>
+			<li class="fragment fade-up">Multi- & many-core processors</li>
+			<li class="fragment fade-up">distributed systems</li>
+		</ul>
+		<li class="fragment fade-up">(Safe) updates?</li>
+	</ul>
+</section>
+
+<section>
+	<h3>MIMOS</h3>
+	<img width="80%" src="images/fib.png" style="margin-top: 0;"/>
+	<ul>
+		<li class="fragment fade-up">Kahn process networks (KPNs)</li>
+		<li class="fragment fade-up">(Timed) release patterns</li>
+		<li class="fragment fade-up">(Timed) read/write patterns</li>
+	</ul>
+</section>
+
+<section>
+	<h3>Our contribution</h3>
+
+	<ul>
+		<li class="fragment fade-up">MIMOS Application language</li>
+		<li class="fragment fade-up">Focus on formal semantics</li>
+		<li class="fragment fade-up">Naturally divides into</li>
+		<ul>
+			<li class="fragment fade-up">Semantics for computation</li>
+			<li class="fragment fade-up">Semantics for coordination</li>
+		</ul>
+		<li class="fragment fade-up">Prototype simulator</li>
+	</ul>
 </section>
 
 <section data-auto-animate>
@@ -60,28 +98,6 @@
 	</code></pre>
 </section>
 
-<section data-auto-animate>
-	<img width="80%" src="images/edge_detector.png" />
-</section>
-
-<section data-auto-animate>
-	<img width="60%" src="images/edge_detector.png" />
-	<pre class="text"><code data-trim data-noescape data-line-numbers="|1|3|4-6|12|">
-		step edge_detect (in : bool) --> (out : bool?)
-		{
-			pre_in = in -> pre in;
-			out = if !pre_in && in then (Some true)
-				    else if pre_in && !in then (Some false)
-				  	else None;
-		}
-
-		channel a : bool
-		channel b : bool
-
-		node edge implements edge_detect (a) --> (b?) every 100ms
-	</code></pre>
-</section>
-
 <section>
 	<span style="font-size: 70%">
 	$$\small
@@ -98,6 +114,7 @@
 	{} & | & \textbf{None} & \text{None} \\
 	{} & | & \textbf{Some}\, e & \text{Some} \\
 	{} & | & \textbf{either}\, e\, \textbf{or}\, e & \text{Option match} \\
+	{} & | & \bm{\lambda}_{p_{in}}^{p_{out}} \bm{.} [p_i = e_i]^n & \text{Abstraction} \\
 	p : \text{Pattern} & ::= & x & \text{Variable pattern} \\
 	{} & | & p\bm{,}\, \ldots\bm{,}\, p & \text{Tuple pattern}
 	\end{array}
@@ -121,6 +138,15 @@
 	\[\begin{align*}(x \mapsto 1, y \mapsto 2) \Uparrow_z^3\; &=\; (x \mapsto 1, y \mapsto 2, z \mapsto 3) \\
 	(x \mapsto 1, y \mapsto 2) \Uparrow_{(x, y)}^{(3, 4)}\; &=\; (x \mapsto 3, y \mapsto 4)\end{align*}\]
 	</span>
+</section>
+
+<section>
+	<h3>Step semantics</h3>
+	<ul>
+		<li class="fragment fade-up">How to model state?</li>
+		<li class="fragment fade-up">Big-step + rewrite semantics</li>
+	</ul>
+	<span class="fragment fade-up">\[\Gamma \vdash e \Rightarrow v, e'\]</span>
 </section>
 
 <section>
@@ -152,11 +178,91 @@
 	& \; &
 	\frac{\Gamma \vdash e_1 \Rightarrow \textbf{None}, e_1' \qquad \Gamma \vdash e_2 \Rightarrow v, e_2'}{\Gamma \vdash (\textbf{either}\, e_1\, \textbf{or}\, e_2) \Rightarrow v, (\textbf{either}\, e_1'\, \textbf{or}\, e_2')}\; \texttt{\small (EthrNone)}
 	\end{aligned} \\[4mm]
-	\frac{\Gamma \vdash e_1 \Rightarrow \bm{\lambda}_{p_{in}}^{p_{out}} \bm{.} [p_i = e_i]^n, \text{\textunderscore} \qquad \Gamma \vdash e_2 \Rightarrow, v_2, e_2' \qquad \Gamma \Uparrow_{p_{in}}^{v_2} \vdash [p_i = e_i]^n \hookrightarrow [p_i = e_i']^n, \Gamma'}{\Gamma \vdash e_1\; e_2 \Rightarrow \Gamma' \Downarrow_{p_{out}}, (\bm{\lambda}_{p_{in}}^{p_{out}} \bm{.} [p_i = e_i']^n)\; e_2'}\; \texttt{\small (App)} \\[4mm]
+	\frac{\Gamma \vdash e_1 \Rightarrow \bm{\lambda}_{p_{in}}^{p_{out}} \bm{.} [p_i = e_i]^n, \text{\textunderscore} \qquad \Gamma \vdash e_2 \Rightarrow v_2, e_2' \qquad \Gamma \Uparrow_{p_{in}}^{v_2} \vdash [p_i = e_i]^n \hookrightarrow [p_i = e_i']^n, \Gamma'}{\Gamma \vdash e_1\; e_2 \Rightarrow \Gamma' \Downarrow_{p_{out}}, (\bm{\lambda}_{p_{in}}^{p_{out}} \bm{.} [p_i = e_i']^n)\; e_2'}\; \texttt{\small (App)} \\[4mm]
 	\frac{\Gamma' \vdash e_1 \Rightarrow v_1, e_1' \qquad \ldots \qquad \Gamma' \vdash e_n \Rightarrow v_n, e_n'}{\Gamma \vdash [p_i = e_i]^n \hookrightarrow [p_i = e_i']^n, \Gamma' = \Gamma \Uparrow_{p_1}^{v_1} \cdots \Uparrow_{p_n}^{v_n}}\; \texttt{\small (Eqs)}
 	\end{gather*}
 	\]
 	</span>
+</section>
+
+<section>
+	<span style="font-size: 70%">
+	\[
+	\begin{gather*}
+	\frac{}{\Gamma \vdash x \Rightarrow \Gamma \Downarrow_x, x}\; \texttt{\small (Var)} \\[0.6cm]
+	\frac{}{\Gamma \vdash c \Rightarrow c, c}\; \texttt{\small (Const)}
+	\end{gather*}
+	\]
+	</span>
+</section>
+
+<section>
+	<span style="font-size: 70%">
+	\[
+	\begin{gather*}
+	\frac{\Gamma \vdash e \Rightarrow v, e'}{\Gamma \vdash \textbf{pre}\, e \Rightarrow \bot, (v \rightarrow \textbf{pre}\, e')}\; \texttt{\small (Pre)} \\[0.6cm]
+	\frac{\Gamma \vdash e_1 \Rightarrow v_1, \text{\textunderscore}}{\Gamma \vdash e_1\, \textbf{fby}\, e_2 \Rightarrow v_1, e_2}\; \texttt{\small (Fby)} \\[0.6cm]
+	\frac{\Gamma \vdash e_1 \Rightarrow v_1, \text{\textunderscore} \qquad \Gamma \vdash e_2 \Rightarrow \text{\textunderscore}, e_2'}{\Gamma \vdash (e_1 \bm{\rightarrow} e_2) \Rightarrow v_1, e_2'}\; \texttt{\small (Init)}
+	\end{gather*}
+	\]
+	</span>
+</section>
+
+<section>
+	<span style="font-size: 50%">
+	\[
+	\begin{gather*}
+	\frac{\Gamma \vdash e_1 \Rightarrow \bm{\lambda}_{p_{in}}^{p_{out}} \bm{.} [p_i = e_i]^n, \text{\textunderscore} \qquad \Gamma \vdash e_2 \Rightarrow v_2, e_2' \qquad \Gamma \Uparrow_{p_{in}}^{v_2} \vdash [p_i = e_i]^n \hookrightarrow [p_i = e_i']^n, \Gamma'}{\Gamma \vdash e_1\; e_2 \Rightarrow \Gamma' \Downarrow_{p_{out}}, (\bm{\lambda}_{p_{in}}^{p_{out}} \bm{.} [p_i = e_i']^n)\; e_2'}\; \texttt{\small (App)} \\[0.8cm]
+	\frac{\Gamma' \vdash e_1 \Rightarrow v_1, e_1' \qquad \ldots \qquad \Gamma' \vdash e_n \Rightarrow v_n, e_n'}{\Gamma \vdash [p_i = e_i]^n \hookrightarrow [p_i = e_i']^n, \Gamma' = \Gamma \Uparrow_{p_1}^{v_1} \cdots \Uparrow_{p_n}^{v_n}}\; \texttt{\small (Eqs)}
+	\end{gather*}
+	\]
+	</span>
+</section>
+
+<section>
+	<img class="r-stretch" src="images/fifo-rewrite.png" />
+</section>
+
+<section>
+	<h3>Simulation</h3>
+	<ul>
+		<li class="fragment fade-up">Deep embedding into OCaml</li>
+		<li class="fragment fade-up">Step evaluation &rarr; direct translation</li>
+		<li class="fragment fade-up">Node execution &rarr; discrete-event simulation</li>
+		<li class="fragment fade-up">Step prototypes &rarr; OCaml functor</li>
+	</ul>
+</section>
+
+<section>
+	<h3>Conclusion</h3>
+	<ul>
+		<li class="fragment fade-up">Mimosa as an implementation of MIMOS MoC</li>
+		<li class="fragment fade-up">Formal semantics</li>
+		<ul>
+			<li class="fragment fade-up">Computation &rarr; steps</li>
+			<li class="fragment fade-up">Coordination &rarr; nodes & channels</li>
+		</ul>
+		<li class="fragment fade-up">Prototype simulator</li>
+	</ul>
+</section>
+
+<section>
+	<h3>Future work</h3>
+	<ul>
+		<li class="fragment fade-up">Compiler</li>
+		<li class="fragment fade-up">Additional read/write strategies</li>
+		<ul>
+			<li class="fragment fade-up">Registers</li>
+			<li class="fragment fade-up">Sequences</li>
+			<li class="fragment fade-up">Upto-k</li>
+		</ul>
+		<li class="fragment fade-up">Effect-type system</li>
+	</ul>
+</section>
+
+<section>
+	<h3>Thank you!</h3>
+	<p>Questions?</p>
 </section>
 
 			</div>
